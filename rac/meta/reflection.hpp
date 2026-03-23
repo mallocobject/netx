@@ -1,5 +1,5 @@
-#ifndef RAC_NET_REFLECTION_HPP
-#define RAC_NET_REFLECTION_HPP
+#ifndef RAC_META_REFLECTION_HPP
+#define RAC_META_REFLECTION_HPP
 
 #include <cstddef>
 #include <string>

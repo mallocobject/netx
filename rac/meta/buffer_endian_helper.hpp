@@ -1,5 +1,5 @@
-#ifndef RAC_NET_BUFFER_ENDIAN_HELPER_HPP
-#define RAC_NET_BUFFER_ENDIAN_HELPER_HPP
+#ifndef RAC_META_BUFFER_ENDIAN_HELPER_HPP
+#define RAC_META_BUFFER_ENDIAN_HELPER_HPP
 
 #include <cstdint>
 #include <cstring>

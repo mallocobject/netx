@@ -4,6 +4,7 @@
 #include "rac/meta/reflection.hpp"
 #include "rac/net/socket.hpp"
 #include "rac/net/stream.hpp"
+#include "rac/rpc/dispatcher.hpp"
 #include "rac/rpc/rpc_header.hpp"
 #include "rac/rpc/serialize_traits.hpp"
 #include <csignal>
@@ -29,8 +30,16 @@ struct User
 
 User rpc_func(const User& usr)
 {
+	// 在服务端打印接收到的信息，验证是否正确反序列化了前 3 个字段
+	std::cout << "\n--- Server Received --- \n";
+	std::cout << "ID: " << usr.id << "\n";
+	std::cout << "Name: " << usr.name << "\n";
+	std::cout << "Location: (" << usr.loc.x << ", " << usr.loc.y << ")\n";
+	std::cout << "-----------------------\n";
 	return usr;
 }
+
+RpcDispatcher dispatcher;
 
 Task<> handle_client(int fd)
 {
@@ -63,21 +72,19 @@ Task<> handle_client(int fd)
 
 		std::cout << h << std::endl;
 
-		using ArgsType = std::tuple<User>;
-		ArgsType args;
+		std::string method_name;
+		DeserializeTraits<std::string>::deserialize(s.read_buffer(),
+													&method_name);
 
-		DeserializeTraits<ArgsType>::deserialize(s.read_buffer(), &args);
+		LOG_DEBUG << "Client requesting method: " << method_name;
 
-		User result = std::apply(rpc_func, args);
+		Buffer res_payload;
+		dispatcher.dispatch(method_name, s.read_buffer(), &res_payload);
 
-		using RetType = std::tuple<User>;
-		RetType ret{result};
-		Buffer payload;
-		SerializeTraits<RetType>::serialize(&payload, ret);
-
-		h.body_len = static_cast<uint32_t>(payload.readableBytes());
+		h.body_len = static_cast<uint32_t>(res_payload.readableBytes());
 		s.write_buffer()->appendRpcHeader(h);
-		s.write_buffer()->append(payload.peek(), payload.readableBytes());
+		s.write_buffer()->append(res_payload.peek(),
+								 res_payload.readableBytes());
 		co_await s.write();
 	}
 }
@@ -125,6 +132,11 @@ Task<> server_loop(int listen_fd)
 
 int main()
 {
+	dispatcher.bind("EchoUser", [](const User& usr) { return usr; });
+
+	dispatcher.bind("AddPoint", [](Point a, Point b)
+					{ return Point{a.x + b.x, a.y + b.y}; });
+
 	::signal(SIGPIPE, SIG_IGN);
 
 	int listen_fd = socket(AF_INET, SOCK_STREAM | SOCK_NONBLOCK, 0);

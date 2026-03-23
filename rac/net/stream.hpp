@@ -30,8 +30,8 @@ class Stream
 		Socket::setNonBlocking(write_fd_);
 	}
 
-	Stream(int fd, const InetAddr& sock_addr)
-		: read_fd_(fd), write_fd_(dup(fd)), sock_addr_(sock_addr)
+	Stream(int fd, InetAddr sock_addr)
+		: read_fd_(fd), write_fd_(dup(fd)), sock_addr_(std::move(sock_addr))
 	{
 		Socket::setNonBlocking(read_fd_);
 		Socket::setNonBlocking(write_fd_);

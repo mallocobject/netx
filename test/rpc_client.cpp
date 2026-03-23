@@ -22,16 +22,23 @@ struct User
 	std::uint32_t id;
 	std::string name;
 	Point loc;
+
+	std::string email;
+	std::uint64_t phone_number;
 };
 
 Task<> connect_server(int fd)
 {
 	Stream s{fd};
 
-	using ArgsType = std::tuple<User>;
-	ArgsType args{{123, "Alice", {1.0, 2.0}}};
-
 	Buffer payload;
+
+	std::string method_name = "EchoUser";
+	SerializeTraits<std::string>::serialize(&payload, method_name);
+
+	using ArgsType = std::tuple<User>;
+	ArgsType args{{123, "Alice", {1.0, 2.0}, "alice@github.com", 13800138000}};
+
 	SerializeTraits<ArgsType>::serialize(&payload, args);
 
 	RpcHeader h{.magic = kMagic,
@@ -77,7 +84,7 @@ Task<> connect_server(int fd)
 	using RetType = std::tuple<User>;
 	RetType ret;
 
-	DeserializeTraits<ArgsType>::deserialize(s.read_buffer(), &ret);
+	DeserializeTraits<RetType>::deserialize(s.read_buffer(), &ret);
 
 	auto usr = std::get<0>(ret);
 
