@@ -44,7 +44,7 @@ class RpcServer
 
 	void start()
 	{
-		LOG_WARN << "RPC Server listening on http://"
+		LOG_WARN << "RPC Server listening on "
 				 << stream_.sock_addr().to_formatted_string();
 		async_main(serverLoop());
 	}
@@ -86,7 +86,7 @@ inline Task<> RpcServer::handleClient(int conn_fd)
 			if (!rd_buf)
 			{
 				LOG_ERROR << "Connection closed by peer before reading "
-							 "header in fd "
+							 "body in fd "
 						  << stream_.fd();
 				co_return;
 			}

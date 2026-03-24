@@ -129,7 +129,7 @@ Task<Ret> RpcClient::call(const std::string& method_name, Args&&... args)
 
 	using RetTupleType = std::tuple<Ret>;
 	RetTupleType ret_tuple;
-	DeserializeTraits<RetTupleType>::deserialize(stream_.read_buffer(),
+	DeserializeTraits<RetTupleType>::deserialize(&ctx.response_buffer,
 												 &ret_tuple);
 
 	co_return std::get<0>(ret_tuple);
