@@ -21,6 +21,20 @@ template <Future TaskT> struct ScheduledTask
 	{
 	}
 
+	// ScheduledTask& operator=(ScheduledTask&& other) noexcept
+	// {
+	// 	if (this == &other)
+	// 	{
+	// 		*this;
+	// 	}
+	// 	task_ = std::move(other.task_);
+	// 	return *this;
+	// }
+
+	// ScheduledTask()
+	// {
+	// }
+
 	~ScheduledTask() = default;
 
 	decltype(auto) result() &

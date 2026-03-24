@@ -1,6 +1,7 @@
 #include "elog/logger.h"
 #include "rac/async/async_main.hpp"
 #include "rac/async/task.hpp"
+#include "rac/async/when_all.hpp"
 #include "rac/rpc/client.hpp"
 #include <thread>
 

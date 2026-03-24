@@ -50,107 +50,109 @@ class RpcServer
 	}
 
   private:
-	Task<> handleClient(int conn_fd)
-	{
-		Stream s{conn_fd};
+	Task<> handleClient(int conn_fd);
 
-		while (true)
-		{
-			while (s.read_buffer()->readableBytes() < sizeof(RpcHeaderWire))
-			{
-				auto rd_buf = co_await s.read();
-				if (!rd_buf)
-				{
-					LOG_ERROR << "Connection closed by peer before reading "
-								 "header in fd "
-							  << stream_.fd();
-					co_return;
-				}
-			}
-
-			RpcHeader h = s.read_buffer()->peekRpcHeader();
-			std::size_t total_len = h.header_len + h.body_len;
-
-			while (s.read_buffer()->readableBytes() < total_len)
-			{
-				auto rd_buf = co_await s.read();
-				if (!rd_buf)
-				{
-					LOG_ERROR << "Connection closed by peer before reading "
-								 "header in fd "
-							  << stream_.fd();
-					co_return;
-				}
-			}
-
-			s.read_buffer()->retrieve(h.header_len);
-			std::string method_name;
-			DeserializeTraits<std::string>::deserialize(s.read_buffer(),
-														&method_name);
-
-			LOG_DEBUG << "Client requesting method: " << method_name;
-
-			std::size_t size_before = s.write_buffer()->readableBytes();
-
-			dispatcher_.dispatch(method_name, s.read_buffer(),
-								 s.write_buffer());
-
-			h.body_len = static_cast<uint32_t>(
-				s.write_buffer()->readableBytes() - size_before);
-			s.write_buffer()->prependRpcHeader(h);
-
-			co_await s.write();
-		}
-	}
-
-	Task<> serverLoop()
-	{
-		std::list<ScheduledTask<Task<>>> connections;
-		int listen_fd = stream_.fd();
-		Event ev{.fd = listen_fd, .flags = EPOLLIN};
-		auto ev_awaiter = EventLoop::loop().wait_event(ev);
-
-		while (true)
-		{
-			co_await ev_awaiter;
-			while (true)
-			{
-				int conn_fd = accept4(listen_fd, nullptr, nullptr,
-									  SOCK_NONBLOCK | SOCK_CLOEXEC);
-				if (conn_fd == -1)
-				{
-					break;
-				}
-				int opt = 1;
-				setsockopt(conn_fd, IPPROTO_TCP, TCP_NODELAY, &opt,
-						   sizeof(opt));
-				connections.emplace_back(handleClient(conn_fd));
-			}
-
-			if (connections.size() < 100) [[likely]]
-			{
-				continue;
-			}
-			for (auto iter = connections.begin(); iter != connections.end();)
-			{
-				if (iter->done())
-				{
-					iter->result(); //< consume result, such as throw exception
-					iter = connections.erase(iter);
-				}
-				else
-				{
-					++iter;
-				}
-			}
-		}
-		co_return;
-	}
+	Task<> serverLoop();
 
   private:
 	Stream stream_;
 	RpcDispatcher dispatcher_{};
 };
+
+inline Task<> RpcServer::handleClient(int conn_fd)
+{
+	Stream s{conn_fd};
+
+	while (true)
+	{
+		while (s.read_buffer()->readableBytes() < sizeof(RpcHeaderWire))
+		{
+			auto rd_buf = co_await s.read();
+			if (!rd_buf)
+			{
+				LOG_ERROR << "Connection closed by peer before reading "
+							 "header in fd "
+						  << stream_.fd();
+				co_return;
+			}
+		}
+
+		RpcHeader h = s.read_buffer()->peekRpcHeader();
+		std::size_t total_len = h.header_len + h.body_len;
+
+		while (s.read_buffer()->readableBytes() < total_len)
+		{
+			auto rd_buf = co_await s.read();
+			if (!rd_buf)
+			{
+				LOG_ERROR << "Connection closed by peer before reading "
+							 "header in fd "
+						  << stream_.fd();
+				co_return;
+			}
+		}
+
+		s.read_buffer()->retrieve(h.header_len);
+		std::string method_name;
+		DeserializeTraits<std::string>::deserialize(s.read_buffer(),
+													&method_name);
+
+		LOG_DEBUG << "Client requesting method: " << method_name;
+
+		std::size_t size_before = s.write_buffer()->readableBytes();
+
+		dispatcher_.dispatch(method_name, s.read_buffer(), s.write_buffer());
+
+		h.body_len = static_cast<uint32_t>(s.write_buffer()->readableBytes() -
+										   size_before);
+		s.write_buffer()->prependRpcHeader(h);
+
+		co_await s.write();
+	}
+}
+
+inline Task<> RpcServer::serverLoop()
+{
+	std::list<ScheduledTask<Task<>>> connections;
+	int listen_fd = stream_.fd();
+	Event ev{.fd = listen_fd, .flags = EPOLLIN};
+	auto ev_awaiter = EventLoop::loop().wait_event(ev);
+
+	while (true)
+	{
+		co_await ev_awaiter;
+		while (true)
+		{
+			int conn_fd = accept4(listen_fd, nullptr, nullptr,
+								  SOCK_NONBLOCK | SOCK_CLOEXEC);
+			if (conn_fd == -1)
+			{
+				break;
+			}
+			int opt = 1;
+			setsockopt(conn_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
+			connections.emplace_back(handleClient(conn_fd));
+		}
+
+		if (connections.size() < 100) [[likely]]
+		{
+			continue;
+		}
+		for (auto iter = connections.begin(); iter != connections.end();)
+		{
+			if (iter->done())
+			{
+				iter->result(); //< consume result, such as throw exception
+				iter = connections.erase(iter);
+			}
+			else
+			{
+				++iter;
+			}
+		}
+	}
+	co_return;
+}
 } // namespace rac
 
 #endif

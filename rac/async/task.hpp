@@ -35,6 +35,17 @@ template <typename T = void> struct Task
 	{
 	}
 
+	Task& operator=(Task&& other) noexcept
+	{
+		if (this == &other)
+		{
+			return *this;
+		}
+		destroy();
+		coro_ = std::exchange(other.coro_, nullptr);
+		return *this;
+	}
+
 	~Task()
 	{
 		destroy();
