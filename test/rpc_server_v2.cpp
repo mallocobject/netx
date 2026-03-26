@@ -1,8 +1,8 @@
-#include "rac/rpc/server.hpp"
+#include "netx/rpc/server.hpp"
 #include <csignal>
 #include <string>
 
-using namespace rac;
+using namespace netx;
 
 struct Point
 {

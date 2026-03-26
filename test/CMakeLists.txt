@@ -7,8 +7,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(test1 rpc_server_mt.cpp)
 add_executable(test2 rpc_client_v3.cpp)
 
-target_link_libraries(test1 PRIVATE rac elog)
-target_link_libraries(test2 PRIVATE rac elog)
+target_link_libraries(test1 PRIVATE netx elog)
+target_link_libraries(test2 PRIVATE netx elog)
 
 target_compile_definitions(test1 PRIVATE 
     LYNX_WEB_SRC_DIR="${CMAKE_CURRENT_SOURCE_DIR}"

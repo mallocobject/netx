@@ -1,9 +1,9 @@
-#include "rac/meta/lock_free_queue.hpp"
+#include "netx/meta/lock_free_queue.hpp"
 #include <atomic>
 #include <iostream>
 #include <thread>
 
-using namespace rac;
+using namespace netx;
 
 int main()
 {

@@ -1,12 +1,12 @@
-#include "rac/async/when_all.hpp"
+#include "netx/async/when_all.hpp"
 #include "elog/logger.h"
-#include "rac/async/async_main.hpp"
-#include "rac/async/non_void_helper.hpp"
-#include "rac/async/sleep.hpp"
-#include "rac/async/task.hpp"
+#include "netx/async/async_main.hpp"
+#include "netx/async/non_void_helper.hpp"
+#include "netx/async/sleep.hpp"
+#include "netx/async/task.hpp"
 #include <stdexcept>
 
-using namespace rac;
+using namespace netx;
 using namespace std::chrono_literals;
 
 Task<> task1()

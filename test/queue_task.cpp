@@ -1,12 +1,12 @@
-#include "rac/async/async_main.hpp"
-#include "rac/async/scheduled_task.hpp"
-#include "rac/async/task.hpp"
-#include "rac/meta/intrusive_list.hpp"
-#include "rac/meta/lock_free_queue.hpp"
+#include "netx/async/async_main.hpp"
+#include "netx/async/scheduled_task.hpp"
+#include "netx/async/task.hpp"
+#include "netx/meta/intrusive_list.hpp"
+#include "netx/meta/lock_free_queue.hpp"
 #include <thread>
 #include <utility>
 
-using namespace rac;
+using namespace netx;
 
 Task<> task()
 {

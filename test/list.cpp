@@ -1,7 +1,7 @@
-#include "rac/meta/intrusive_list.hpp"
+#include "netx/meta/intrusive_list.hpp"
 #include <iostream>
 
-using namespace rac;
+using namespace netx;
 
 struct Test : public Intrusive_list<Test>::Node
 {
