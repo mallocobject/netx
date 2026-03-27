@@ -1,7 +1,7 @@
 #ifndef NETX_NET_SCHEDULER_HPP
 #define NETX_NET_SCHEDULER_HPP
 
-#include "elog/logger.h"
+#include "elog/logger.hpp"
 #include "netx/async/check_error.hpp"
 #include "netx/async/event_loop.hpp"
 #include "netx/async/scheduled_task.hpp"
@@ -42,8 +42,8 @@ class Scheduler
 		{
 			co_await wakeup_awaiter_;
 			shallow();
-			LOG_TRACE << "scheduler receives tasks, its address is "
-					  << static_cast<void*>(this);
+			elog::LOG_TRACE("scheduler receives tasks, its address is {}",
+							static_cast<void*>(this));
 			async::Task<> tmp(nullptr);
 			// while (task_queue_.pop(tmp))
 			// {
@@ -89,7 +89,7 @@ class Scheduler
 
 		if (n != sizeof(signal))
 		{
-			LOG_ERROR << "writes " << n << " bytes instead of 8";
+			elog::LOG_ERROR("writes {} bytes instead of 8", n);
 		}
 	}
 
@@ -101,7 +101,7 @@ class Scheduler
 
 		if (n != sizeof(signal))
 		{
-			LOG_ERROR << "reads " << n << " bytes instead of 8";
+			elog::LOG_ERROR("reads {} bytes instead of 8", n);
 		}
 	}
 

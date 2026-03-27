@@ -1,7 +1,7 @@
 #ifndef NETX_RPC_CLIENT_HPP
 #define NETX_RPC_CLIENT_HPP
 
-#include "elog/logger.h"
+#include "elog/logger.hpp"
 #include "netx/async/check_error.hpp"
 #include "netx/async/scheduled_task.hpp"
 #include "netx/async/task.hpp"
@@ -217,13 +217,13 @@ inline async::Task<> RpcClient::readLoop()
 			}
 			else
 			{
-				LOG_ERROR << "Received unknown request_id: " << h.request_id;
+				::elog::LOG_ERROR("Received unknown request_id: {}", h.request_id);
 			}
 		}
 	}
 	catch (const std::exception& e)
 	{
-		LOG_ERROR << e.what();
+		::elog::LOG_ERROR("{}", e.what());
 
 		for (auto& [id, ctx] : pending_calls_)
 		{
@@ -267,7 +267,7 @@ inline async::Task<> RpcClient::writeLoop()
 	}
 	catch (const std::exception& e)
 	{
-		LOG_ERROR << "writeLoop exit: " << e.what();
+		::elog::LOG_ERROR("writeLoop exit: {}", e.what());
 		for (auto& [id, ctx] : pending_calls_)
 		{
 			ctx->exception = std::current_exception();

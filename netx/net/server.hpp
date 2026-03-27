@@ -13,15 +13,22 @@
 #include <latch>
 #include <thread>
 #include <vector>
+#include <chrono>
 namespace netx
 {
 namespace net
 {
+namespace async = netx::async;
 template <typename Derived> class Server
 {
   protected:
 	Server() : stream_(async::checkError(net::Socket::socket(nullptr)))
 	{
+		idle_fd_ = ::open("/dev/null", O_RDONLY | O_CLOEXEC);
+		if (idle_fd_ == -1)
+		{
+			::elog::LOG_WARN("open /dev/null failed: {}", ::strerror(errno));
+		}
 	}
 
   public:
@@ -47,7 +54,7 @@ template <typename Derived> class Server
 	{
 		if (loop_count < 1)
 		{
-			LOG_FATAL << "loop count must more then 1";
+			::elog::LOG_FATAL("loop count must be >= 1");
 			exit(EXIT_FAILURE);
 		}
 		loop_count_ = loop_count;
@@ -69,8 +76,8 @@ template <typename Derived> class Server
 		}
 		start_latch.wait();
 
-		LOG_WARN << "Netx-Server listening on "
-				 << stream_.sock_addr().to_formatted_string();
+		::elog::LOG_WARN("Netx-Server listening on {}",
+                 stream_.sock_addr().to_formatted_string());
 
 		async_main(serverLoop());
 	}
@@ -89,6 +96,8 @@ template <typename Derived> class Server
 
 	std::vector<net::Scheduler*> schedulers_ptr_;
 	std::vector<std::jthread> loops_;
+
+	int idle_fd_{-1};
 };
 
 template <typename Derived> inline async::Task<> Server<Derived>::serverLoop()
@@ -101,14 +110,39 @@ template <typename Derived> inline async::Task<> Server<Derived>::serverLoop()
 	while (true)
 	{
 		co_await ev_awaiter;
+		static int emfile_count = 0;
 		while (true)
 		{
-			int conn_fd = accept4(listen_fd, nullptr, nullptr,
-								  SOCK_NONBLOCK | SOCK_CLOEXEC);
-			if (conn_fd == -1)
+			int saved_errno = 0;
+			int conn_fd = Socket::accept(listen_fd, nullptr, &saved_errno);
+
+			if (conn_fd < 0)
 			{
+				switch (saved_errno)
+				{
+				case EAGAIN:
+				case EINTR:
+				case ECONNABORTED:
+					break;
+				case EMFILE:
+					emfile_count++;
+					if (emfile_count > 5) {
+						std::this_thread::sleep_for(std::chrono::milliseconds(10));
+						emfile_count = 0;
+					}
+					Socket::close(idle_fd_);
+					conn_fd = Socket::accept(listen_fd, nullptr, nullptr);
+					Socket::close(conn_fd);
+					idle_fd_ = open("/dev/null", O_RDONLY | O_CLOEXEC);
+					::elog::LOG_ERROR("EMFILE: Out of file descriptors!");
+					break;
+				default:
+					async::checkError(saved_errno);
+					break;
+				}
 				break;
 			}
+
 			int opt = 1;
 			setsockopt(conn_fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
 

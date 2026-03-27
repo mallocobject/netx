@@ -19,8 +19,3 @@
 </div>
 
 ---
-
-<div align="center">
-  <h3>🚀 开发进度 🚀</h3>
-  <p><i>RPC 模块已完成，当前正在开发 HTTP 服务，后续将支持 WebSocket 协议...</i></p>
-</div>

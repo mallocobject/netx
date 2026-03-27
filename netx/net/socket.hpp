@@ -1,7 +1,7 @@
 #ifndef NETX_NET_SOCKET_HPP
 #define NETX_NET_SOCKET_HPP
 
-#include "elog/logger.h"
+#include "elog/logger.hpp"
 #include "netx/net/inet_addr.hpp"
 #include <cstring>
 #include <fcntl.h>
@@ -22,8 +22,8 @@ inline int socketErrno(int fd)
 	socklen_t len = sizeof(error);
 	if (::getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &len) == -1)
 	{
-		LOG_ERROR << "getsockopt(SO_ERROR) failed for fd " << fd << ": "
-				  << ::strerror(errno);
+		::elog::LOG_ERROR("getsockopt(SO_ERROR) failed for fd {}: {}", fd,
+						  ::strerror(errno));
 		return -1;
 	}
 	return error;
@@ -43,7 +43,7 @@ inline int socket(int* saved_errno)
 		{
 			*saved_errno = errno;
 		}
-		LOG_ERROR << "create socket failed: " << ::strerror(errno);
+		::elog::LOG_ERROR("create socket failed: {}", ::strerror(errno));
 	}
 	return fd;
 }
@@ -54,8 +54,8 @@ inline void setNonBlocking(int fd, bool on = true)
 		int flags = ::fcntl(fd, F_GETFL, 0);
 		if (flags == -1)
 		{
-			LOG_ERROR << "fcntl(F_GETFL) failed for fd " << fd << ": "
-					  << ::strerror(errno);
+			::elog::LOG_ERROR("fcntl(F_GETFL) failed for fd {}: {}", fd,
+							  ::strerror(errno));
 			return;
 		}
 
@@ -70,8 +70,8 @@ inline void setNonBlocking(int fd, bool on = true)
 
 		if (::fcntl(fd, F_SETFL, flags) == -1)
 		{
-			LOG_ERROR << "fcntl(F_SETFL) failed for fd " << fd << ": "
-					  << ::strerror(errno);
+			::elog::LOG_ERROR("fcntl(F_SETFL) failed for fd {}: {}", fd,
+							  ::strerror(errno));
 		}
 	}
 }
@@ -83,8 +83,8 @@ inline void setReuseAddr(int fd, bool on = true)
 		if (::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &optval,
 						 sizeof(optval)) == -1)
 		{
-			LOG_ERROR << "setsockopt(SO_REUSEADDR) failed for fd " << fd << ": "
-					  << ::strerror(errno);
+			::elog::LOG_ERROR("setsockopt(SO_REUSEADDR) failed for fd {}: {}",
+							  fd, ::strerror(errno));
 		}
 	}
 }
@@ -95,8 +95,8 @@ inline void setKeepAlive(int fd, bool on = true)
 	if (::setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &optval, sizeof(optval)) ==
 		-1)
 	{
-		LOG_ERROR << "setsockopt(SO_KEEPALIVE) failed for fd " << fd << ": "
-				  << ::strerror(errno);
+		::elog::LOG_ERROR("setsockopt(SO_KEEPALIVE) failed for fd {}: {}", fd,
+						  ::strerror(errno));
 	}
 }
 
@@ -105,8 +105,8 @@ inline void setNoDelay(int fd, bool on = true)
 	int optval = on ? 1 : 0;
 	if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &optval, sizeof(optval)))
 	{
-		LOG_ERROR << "setsockopt(TCP_NODELAY) failed for fd " << fd << ": "
-				  << ::strerror(errno);
+		::elog::LOG_ERROR("setsockopt(TCP_NODELAY) failed for fd {}: {}", fd,
+						  ::strerror(errno));
 	}
 }
 
@@ -123,7 +123,7 @@ inline bool bind(int fd, const InetAddr& local_addr, int* saved_errno)
 		{
 			*saved_errno = errno;
 		}
-		LOG_ERROR << "bind failed for fd " << fd << ": " << ::strerror(errno);
+		::elog::LOG_ERROR("bind failed for fd {}: {}", fd, ::strerror(errno));
 		return false;
 	}
 	return true;
@@ -142,7 +142,7 @@ inline bool listen(int fd, int* saved_errno, int backlog = SOMAXCONN)
 		{
 			*saved_errno = errno;
 		}
-		LOG_ERROR << "listen failed for fd " << fd << ": " << ::strerror(errno);
+		::elog::LOG_ERROR("listen failed for fd {}: {}", fd, ::strerror(errno));
 		return false;
 	}
 	return true;
@@ -191,8 +191,8 @@ inline void shutdown(int fd)
 {
 	if (::shutdown(fd, SHUT_WR) == -1)
 	{
-		LOG_ERROR << "shutdown failed for fd " << fd << ": "
-				  << ::strerror(errno);
+		::elog::LOG_ERROR("shutdown failed for fd {}: {}", fd,
+						  ::strerror(errno));
 	}
 }
 
@@ -200,7 +200,7 @@ inline void close(int fd)
 {
 	if (::close(fd) == -1)
 	{
-		LOG_ERROR << "close failed for fd " << fd << ": " << ::strerror(errno);
+		::elog::LOG_ERROR("close failed for fd {}: {}", fd, ::strerror(errno));
 	}
 }
 
@@ -209,8 +209,8 @@ inline void getSockname(int fd, InetAddr* sock_addr)
 	socklen_t len = sizeof(struct sockaddr_in);
 	if (::getsockname(fd, sock_addr->sockaddr(), &len) == -1)
 	{
-		LOG_ERROR << "get socket name failed for fd " << fd << ": "
-				  << ::strerror(errno);
+		::elog::LOG_ERROR("get socket name failed for fd {}: {}", fd,
+						  ::strerror(errno));
 	}
 }
 
@@ -219,8 +219,8 @@ inline void getPeername(int fd, InetAddr* sock_addr)
 	socklen_t len = sizeof(struct sockaddr_in);
 	if (::getpeername(fd, sock_addr->sockaddr(), &len) == -1)
 	{
-		LOG_ERROR << "get peer socket name failed for fd " << fd << ": "
-				  << ::strerror(errno);
+		::elog::LOG_ERROR("get peer socket name failed for fd {}: {}", fd,
+						  ::strerror(errno));
 	}
 }
 } // namespace Socket

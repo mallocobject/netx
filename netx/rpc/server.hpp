@@ -57,9 +57,9 @@ inline async::Task<> RpcServer::handleClient(int conn_fd)
 			auto rd_buf = co_await s.read();
 			if (!rd_buf)
 			{
-				LOG_ERROR << "Connection closed by peer before reading "
-							 "header in fd "
-						  << stream_.fd();
+				::elog::LOG_ERROR(
+					"Connection closed by peer before reading header in fd {}",
+					stream_.fd());
 
 				s.close();
 				co_return;
@@ -74,9 +74,9 @@ inline async::Task<> RpcServer::handleClient(int conn_fd)
 			auto rd_buf = co_await s.read();
 			if (!rd_buf)
 			{
-				LOG_ERROR << "Connection closed by peer before reading "
-							 "body in fd "
-						  << stream_.fd();
+				::elog::LOG_ERROR(
+					"Connection closed by peer before reading body in fd {}",
+					stream_.fd());
 
 				s.close();
 				co_return;
@@ -90,7 +90,7 @@ inline async::Task<> RpcServer::handleClient(int conn_fd)
 		DeserializeTraits<std::string>::deserialize(s.read_buffer(),
 													&method_name);
 
-		// LOG_DEBUG << "Client requesting method: " << method_name;
+		// LOG_DEBUG("Client requesting method: {}" ,method_name);
 
 		std::size_t consumed =
 			readable_before - s.read_buffer()->readableBytes();
