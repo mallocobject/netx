@@ -5,6 +5,7 @@
 using namespace netx::http;
 using namespace netx::net;
 using namespace netx::async;
+using namespace std::chrono_literals;
 
 int main()
 {
@@ -20,6 +21,7 @@ int main()
 
                 co_await stream->write(res->to_formatted_string());
             })
+        .timeout(3s)
 		.loop(8)
 		.start();
 }

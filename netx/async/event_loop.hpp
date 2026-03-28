@@ -12,6 +12,7 @@
 #include <set>
 #include <unordered_set>
 #include <utility>
+#include "elog/logger.hpp"
 namespace netx
 {
 namespace async
@@ -24,12 +25,20 @@ struct EventLoop
 {
 	void call_soon(Handle& handle)
 	{
+		if (handle.state() == Handle::State::kCancelled)
+		{
+			return;
+		}
 		handle.setState(Handle::State::kScheduled);
 		ready_.emplace(handle.handleId(), &handle);
 	}
 
 	void call_at(TimePoint time_point, Handle& handle)
-	{
+	{	
+		if (handle.state() == Handle::State::kCancelled) 
+		{
+			return;
+		}
 		handle.setState(Handle::State::kScheduled);
 		schedule_.emplace(time_point, HandleInfo{handle.handleId(), &handle});
 	}
@@ -42,14 +51,19 @@ struct EventLoop
 
 	void cancel_handle(Handle& handle)
 	{
-		handle.setState(Handle::State::kUnScheduled);
-		cancelled_.insert(handle.handleId());
+		if (handle.state() == Handle::State::kScheduled)
+		{
+			cancelled_.insert(handle.handleId());
+		}
+
+		handle.setState(Handle::State::kCancelled);
 	}
 
 	void run_until_complete()
 	{
 		while (!stopped())
 		{
+			// print_size();
 			runOnce();
 		}
 	}
@@ -128,6 +142,11 @@ struct EventLoop
 	int epfd() const noexcept
 	{
 		return poller.epfd();
+	}
+
+	void print_size() const noexcept
+	{
+		elog::LOG_FATAL("{}, {}, {}", ready_.size(), schedule_.size(), cancelled_.size());
 	}
 
 	EventLoop(EventLoop&&) = delete;
@@ -211,14 +230,17 @@ inline void EventLoop::runOnce()
 		if (auto it = cancelled_.find(info.id); it != cancelled_.end())
 		{
 			cancelled_.erase(it);
+			continue;
 		}
-		else
+
+		if (info.handle->state() != Handle::State::kCancelled) 
 		{
 			info.handle->setState(
-				Handle::State::kUnScheduled); // 先设置状态，再
-											  // run，防止覆盖后续状态
+			Handle::State::kUnScheduled); // 先设置状态，再
+											// run，防止覆盖后续状态
 			info.handle->run();
 		}
+		
 	}
 
 	cleanupDelayedCall();

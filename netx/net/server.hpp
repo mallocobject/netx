@@ -51,6 +51,13 @@ template <typename Derived> class Server
 		return listen(net::InetAddr{ip, port});
 	}
 
+	template <typename Rep, typename Period>
+	Derived& timeout(std::chrono::duration<Rep, Period> duration)
+	{
+		timeout_ = std::chrono::duration_cast<std::chrono::nanoseconds>(duration);
+		return *static_cast<Derived*>(this);
+	}
+
 	Derived& loop(std::size_t loop_count = 1)
 	{
 		if (loop_count < 1)
@@ -101,6 +108,8 @@ template <typename Derived> class Server
 	std::vector<std::jthread> loops_;
 
 	int idle_fd_{-1};
+
+	std::chrono::nanoseconds timeout_{std::chrono::nanoseconds::max()};
 };
 
 template <typename Derived> inline async::Task<> Server<Derived>::serverLoop()

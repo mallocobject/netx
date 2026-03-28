@@ -20,6 +20,7 @@ struct WhenAnyCtrlBlock
 	std::size_t winner{npos};
 	CoroHandle* waiter{nullptr};
 	std::exception_ptr exception{nullptr};
+	// std::span<const Task<>> tasks;
 
 	bool try_complete(std::size_t index, std::exception_ptr ep)
 	{
@@ -30,6 +31,14 @@ struct WhenAnyCtrlBlock
 		}
 		winner = index;
 		exception = ep;
+
+		// for (int i = 0; i < tasks.size(); i++)
+		// {
+		// 	if (i != index)
+		// 	{
+		// 		tasks[i].coro_.promise().cancel();
+		// 	}
+		// }
 
 		auto* w = waiter;
 		waiter = nullptr;
@@ -103,6 +112,7 @@ Task<std::variant<typename AwaitableTraits<Ts>::NonVoidRetType...>> whenAnyImpl(
 
 	std::tuple<Result<typename AwaitableTraits<Ts>::RetType>...> results;
 	Task<> helpers[]{whenAnyHelper(ts, ctrl, std::get<Is>(results), Is)...};
+
 	co_await WhenAnyAwaiter{ctrl, helpers};
 	std::variant<typename AwaitableTraits<Ts>::NonVoidRetType...> out;
 	((ctrl.winner == Is
