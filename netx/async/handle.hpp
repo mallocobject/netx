@@ -2,6 +2,7 @@
 #define NETX_ASYNC_HANDLE_HPP
 
 #include <cstdint>
+#include <atomic>
 namespace netx
 {
 namespace async
@@ -37,7 +38,7 @@ struct Handle
 
   private:
 	HandleId handle_id_;
-	inline static HandleId handle_id_generation_ = 0;
+	inline static std::atomic<HandleId> handle_id_generation_{0};
 
   protected:
 	State state_{Handle::State::kUnScheduled};

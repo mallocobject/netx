@@ -5,6 +5,8 @@
 #include "netx/http/session.hpp"
 #include "netx/net/server.hpp"
 #include "netx/net/stream.hpp"
+#include "netx/async/sleep.hpp"
+#include "netx/async/when_any.hpp"
 namespace netx
 {
 namespace http
@@ -75,8 +77,23 @@ inline async::Task<> HttpServer::handleClient(int conn_fd)
 			}
 		}
 
-		auto rd_buf = co_await s.read();
-		if (!rd_buf)
+		// if (!co_await s.read())
+		// {
+		// 	s.close();
+		// 	co_return;
+		// }
+
+		auto ret = co_await async::when_any(s.read(), async::sleep(std::chrono::seconds(5)));
+
+
+		if (std::holds_alternative<async::NonVoidHelper<void>>(ret)) 
+		{
+			elog::LOG_WARN("connection time out on fd: {}", s.fd());
+			co_await s.write("HTTP/1.1 408 Request Timeout\r\n\r\n");
+			s.close();
+			co_return;
+		} 
+		else if (std::holds_alternative<bool>(ret) && !std::get<bool>(ret)) 
 		{
 			s.close();
 			co_return;
