@@ -59,8 +59,10 @@ inline async::Task<> HttpServer::handleClient(int conn_fd)
             if (ret.index() == 1) 
             {
                 elog::LOG_WARN("Connection timeout on fd: {}", s.fd());
-                co_await s.write("HTTP/1.1 408 Request Timeout\r\nConnection: close\r\n\r\n");
-                break; 
+                co_await s.write("HTTP/1.1 408 Request Timeout\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                s.shutdown(); 
+				co_await async::when_any(s.read(), async::sleep(std::chrono::seconds(1)));
+				break;
             }
 
             bool read_ok = std::get<0>(ret);
@@ -72,10 +74,12 @@ inline async::Task<> HttpServer::handleClient(int conn_fd)
             while (s.read_buffer()->readableBytes() > 0)
             {
                 if (!session.parse(s.read_buffer()))
-                {
-                    co_await s.write("HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n");
-                    co_return;
-                }
+				{
+					co_await s.write("HTTP/1.1 400 Bad Request\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+					s.shutdown();
+					co_await async::when_any(s.read(), async::sleep(std::chrono::seconds(1)));
+					co_return;
+				}
 
                 if (session.completed())
                 {
@@ -95,7 +99,8 @@ inline async::Task<> HttpServer::handleClient(int conn_fd)
                     if (!keep_alive)
                     {
                         s.shutdown();
-                        co_return;
+						co_await async::when_any(s.read(), async::sleep(std::chrono::seconds(2)));
+						co_return;
                     }
 
                     session.clear();
