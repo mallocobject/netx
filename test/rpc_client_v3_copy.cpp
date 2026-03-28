@@ -33,17 +33,12 @@ Task<> connect_server(RpcClient& client)
 	{
 		while (true)
 		{
-			auto [pt, usr] = co_await when_all(
-				client.call<Point>("AddPoint", Point{1, 2}, Point{5.2, 6.8}),
-				client.call<User>("EchoUser", User{8, "liuna", {1, 5}}));
+			auto [pt] = co_await when_all(
+				client.call<Point>("AddPoint", Point{1, 2}, Point{5.2, 6.8}));
 
 			std::cout << "x: " << pt.x << std::endl;
 			std::cout << "y: " << pt.y << std::endl;
 
-			std::cout << "ID: " << usr.id << "\n";
-			std::cout << "Name: " << usr.name << "\n";
-			std::cout << "Location: (" << usr.loc.x << ", " << usr.loc.y
-					  << ")\n";
 
 			std::this_thread::sleep_for(1s);
 		}

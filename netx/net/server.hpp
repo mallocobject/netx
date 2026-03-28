@@ -14,6 +14,7 @@
 #include <thread>
 #include <vector>
 #include <chrono>
+#include <csignal>
 namespace netx
 {
 namespace net
@@ -63,6 +64,8 @@ template <typename Derived> class Server
 
 	void start()
 	{
+		::signal(SIGPIPE, SIG_IGN);
+
 		std::latch start_latch{static_cast<std::ptrdiff_t>(loop_count_)};
 		for (size_t idx = 0; idx < loop_count_; idx++)
 		{

@@ -59,7 +59,7 @@ inline async::Task<> RpcServer::handleClient(int conn_fd)
 			{
 				::elog::LOG_ERROR(
 					"Connection closed by peer before reading header in fd {}",
-					stream_.fd());
+					s.fd());
 
 				s.close();
 				co_return;
@@ -76,7 +76,7 @@ inline async::Task<> RpcServer::handleClient(int conn_fd)
 			{
 				::elog::LOG_ERROR(
 					"Connection closed by peer before reading body in fd {}",
-					stream_.fd());
+					s.fd());
 
 				s.close();
 				co_return;
